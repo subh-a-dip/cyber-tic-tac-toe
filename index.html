@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🎮 Tic-Tac-Toe Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <meta name="theme-color" content="#ff69b4">
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 CYBER 🚀<br><span class="small-title">🎮 TIC-TAC-TOE 🎮</span></h1>
+        <div class="player-setup" id="playerSetup">
+            <h3>Enter Player Names</h3>
+            <input type="text" id="player1" placeholder="Player 1 (X)" maxlength="10">
+            <input type="text" id="player2" placeholder="Player 2 (O)" maxlength="10">
+            <button id="startGame">Start Game</button>
+        </div>
+        <div class="game-area" id="gameArea" style="display:none;">
+            <div class="score-board" id="scoreBoard">
+                <div class="score" id="score">Score: 0 - 0</div>
+                <button id="showHistory">History</button>
+            </div>
+            <div class="game-info">
+                <div id="status">Player X's turn</div>
+                <div class="game-controls">
+                    <button id="restart">New Game</button>
+                    <button id="resetScore">Reset Score</button>
+                </div>
+            </div>
+            <div class="board" id="board">
+                <div class="win-line" id="winLine"></div>
+            </div>
+            <div class="game-end-overlay" id="gameEndOverlay" style="display:none;">
+                <div class="end-options">
+                    <button id="playAgain">Play Again</button>
+                    <button id="backToSetup">Back to Setup</button>
+                </div>
+            </div>
+        </div>
+        <div class="history-modal" id="historyModal" style="display:none;">
+            <div class="history-content">
+                <h3>Game History</h3>
+                <div id="historyList"></div>
+                <button id="closeHistory">Close</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
