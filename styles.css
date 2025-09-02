@@ -12,9 +12,10 @@ body {
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     padding: 20px;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 body::before {
@@ -44,10 +45,12 @@ body::before {
     padding: 2rem;
     border-radius: 25px;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    max-width: 400px;
+    max-width: 500px;
     width: 100%;
     transform-style: preserve-3d;
     animation: float 6s ease-in-out infinite;
+    margin: 20px auto;
+    min-height: fit-content;
 }
 
 @keyframes float {
@@ -164,8 +167,71 @@ h1 {
     transform: translateY(-2px);
 }
 
+.board-size-selection {
+    margin: 1.5rem 0;
+}
+
+.board-size-selection h4 {
+    color: #00d4ff;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
+}
+
+.size-options {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.size-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    border: 2px solid rgba(0, 212, 255, 0.3);
+    padding: 12px 16px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    text-align: center;
+    min-width: 80px;
+}
+
+.size-btn small {
+    display: block;
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+.size-btn.active {
+    background: linear-gradient(45deg, #00ff88, #00cc66);
+    color: white;
+    border-color: #00ff88;
+    box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+}
+
+.size-btn:hover {
+    border-color: rgba(0, 212, 255, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+}
+
+.board-info {
+    color: #ff6b00;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 107, 0, 0.6);
+}
+
 .game-area {
     position: relative;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
 }
 
 .score-board {
@@ -173,6 +239,8 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .score {
@@ -242,44 +310,87 @@ h1 {
     transition: all 0.3s ease;
 }
 
+#backToModes {
+    background: linear-gradient(45deg, #666666, #444444);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 102, 102, 0.3);
+}
+
+#backToModes:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 102, 102, 0.5);
+    background: linear-gradient(45deg, #777777, #555555);
+}
+
 .board {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    gap: 10px;
-    max-width: 300px;
+    gap: 8px;
     margin: 0 auto;
     aspect-ratio: 1;
     perspective: 1000px;
     position: relative;
+    width: 100%;
+}
+
+.board.size-3 {
+    max-width: min(80vw, 300px);
+    gap: 10px;
+}
+
+.board.size-5 {
+    max-width: min(80vw, 400px);
+    gap: 6px;
+}
+
+.board.size-7 {
+    max-width: min(80vw, 500px);
+    gap: 4px;
 }
 
 .win-line {
     position: absolute;
     background: linear-gradient(90deg, #ff0080, #00ff88, #ff6b00, #00d4ff, #ff0080);
     background-size: 400% 100%;
-    height: 8px;
-    border-radius: 4px;
-    box-shadow: 0 0 20px currentColor, 0 0 40px currentColor, 0 0 80px currentColor;
+    height: 6px;
+    border-radius: 3px;
+    box-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
     transform-origin: left center;
     transform: scaleX(0);
     z-index: 10;
     opacity: 0;
-    border: 2px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .win-line.show {
     opacity: 1;
-    animation: drawLine 1s ease forwards, colorShift 1.5s linear infinite, flashEffect 0.3s ease-in-out infinite alternate;
+    animation: drawLineGeneric 1s ease forwards, colorShift 1.5s linear infinite, flashEffect 0.4s ease-in-out infinite alternate;
 }
 
-@keyframes drawLine {
+.win-line.horizontal {
+    transform-origin: left center;
+}
+
+.win-line.vertical {
+    transform-origin: center top;
+}
+
+.win-line.diagonal {
+    transform-origin: center center;
+}
+
+@keyframes drawLineGeneric {
     0% { 
-        transform: scaleX(0);
+        transform: scale(0);
         background-position: 0% 50%;
     }
     100% { 
-        transform: scaleX(1);
+        transform: scale(1);
         background-position: 100% 50%;
     }
 }
@@ -294,93 +405,55 @@ h1 {
 
 @keyframes flashEffect {
     0% {
-        box-shadow: 0 0 20px #ff0080, 0 0 40px #00ff88, 0 0 80px #ff6b00;
+        box-shadow: 0 0 20px #ff0080, 0 0 40px #00ff88;
         filter: brightness(1) saturate(1);
         border-color: rgba(255, 255, 255, 0.4);
     }
     100% {
-        box-shadow: 0 0 40px #00d4ff, 0 0 80px #ff0080, 0 0 120px #00ff88, 0 0 160px rgba(255, 107, 0, 0.8);
-        filter: brightness(2) saturate(1.5);
+        box-shadow: 0 0 40px #00d4ff, 0 0 80px #ff0080, 0 0 120px #00ff88;
+        filter: brightness(1.8) saturate(1.3);
         border-color: rgba(255, 255, 255, 0.8);
     }
 }
 
-.win-line.row-0 { top: calc(16.66%); left: 0; width: 100%; }
-.win-line.row-1 { top: calc(50%); left: 0; width: 100%; }
-.win-line.row-2 { top: calc(83.33%); left: 0; width: 100%; }
-
-.win-line.col-0 { left: calc(16.66%); top: 0; width: 8px; height: 100%; transform-origin: center top; transform: scaleY(0); }
-.win-line.col-1 { left: calc(50%); top: 0; width: 8px; height: 100%; transform-origin: center top; transform: scaleY(0); }
-.win-line.col-2 { left: calc(83.33%); top: 0; width: 8px; height: 100%; transform-origin: center top; transform: scaleY(0); }
-
-.win-line.col-0.show, .win-line.col-1.show, .win-line.col-2.show {
-    animation: drawLineVertical 0.6s ease forwards;
-}
-
-@keyframes drawLineVertical {
-    0% { 
-        transform: scaleY(0);
-        background-position: 0% 50%;
-    }
-    100% { 
-        transform: scaleY(1);
-        background-position: 100% 50%;
-    }
-}
-
-.win-line.diag-0 {
-    top: 50%; left: 50%; width: 141.42%;
-    transform-origin: center;
-    transform: translate(-50%, -50%) rotate(45deg) scaleX(0);
-}
-
-.win-line.diag-1 {
-    top: 50%; left: 50%; width: 141.42%;
-    transform-origin: center;
-    transform: translate(-50%, -50%) rotate(-45deg) scaleX(0);
-}
-
-.win-line.diag-0.show { animation: drawLineDiagonal 0.6s ease forwards; }
-.win-line.diag-1.show { animation: drawLineDiagonalReverse 0.6s ease forwards; }
-
-@keyframes drawLineDiagonal {
-    0% { 
-        transform: translate(-50%, -50%) rotate(45deg) scaleX(0);
-        background-position: 0% 50%;
-    }
-    100% { 
-        transform: translate(-50%, -50%) rotate(45deg) scaleX(1);
-        background-position: 100% 50%;
-    }
-}
-
-@keyframes drawLineDiagonalReverse {
-    0% { 
-        transform: translate(-50%, -50%) rotate(-45deg) scaleX(0);
-        background-position: 0% 50%;
-    }
-    100% { 
-        transform: translate(-50%, -50%) rotate(-45deg) scaleX(1);
-        background-position: 100% 50%;
-    }
-}
+/* Dynamic win line positioning - no fixed positions needed */
 
 .cell {
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
     border: 2px solid rgba(0, 212, 255, 0.3);
-    border-radius: 15px;
+    border-radius: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: clamp(1.5rem, 6vw, 2.5rem);
     font-weight: bold;
     cursor: pointer;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    min-height: 80px;
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transform-style: preserve-3d;
     position: relative;
+    aspect-ratio: 1;
+    min-height: 40px;
+}
+
+.board.size-3 .cell {
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+    min-height: 80px;
+    border-radius: 15px;
+}
+
+.board.size-5 .cell {
+    font-size: clamp(1rem, 4vw, 1.8rem);
+    min-height: 60px;
+    border-radius: 12px;
+    border-width: 1.5px;
+}
+
+.board.size-7 .cell {
+    font-size: clamp(0.8rem, 3vw, 1.4rem);
+    min-height: 45px;
+    border-radius: 8px;
+    border-width: 1px;
 }
 
 .cell::before {
@@ -573,13 +646,37 @@ h1 {
         margin: 10px;
     }
     
-    .board {
-        max-width: 250px;
+    .board.size-3 {
+        max-width: min(85vw, 85vh, 250px);
     }
     
-    .cell {
+    .board.size-5 {
+        max-width: min(85vw, 85vh, 280px);
+    }
+    
+    .board.size-7 {
+        max-width: min(85vw, 85vh, 320px);
+    }
+    
+    .board.size-3 .cell {
         min-height: 60px;
-        border-width: 2px;
+        font-size: clamp(1.2rem, 5vw, 2rem);
+    }
+    
+    .board.size-5 .cell {
+        min-height: 45px;
+        font-size: clamp(0.9rem, 3.5vw, 1.5rem);
+    }
+    
+    .board.size-7 .cell {
+        min-height: 35px;
+        font-size: clamp(0.7rem, 2.8vw, 1.2rem);
+    }
+    
+    .size-btn {
+        min-width: 70px;
+        padding: 10px 12px;
+        font-size: 0.8rem;
     }
     
     .cell:hover {
@@ -602,6 +699,11 @@ h1 {
     .game-controls {
         flex-direction: column;
         gap: 8px;
+    }
+    
+    #backToModes {
+        padding: 8px 16px;
+        font-size: 0.8rem;
     }
     
     .end-options {

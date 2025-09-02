@@ -11,6 +11,8 @@ class TicTacToe {
         this.gameHistory = this.loadHistory();
         this.isVsBot = false;
         this.botDifficulty = 'hard';
+        this.boardSize = 3;
+        this.winCondition = 3;
         this.init();
     }
 
@@ -22,8 +24,14 @@ class TicTacToe {
         document.getElementById('closeHistory').addEventListener('click', () => this.closeHistory());
         document.getElementById('playAgain').addEventListener('click', () => this.playAgain());
         document.getElementById('backToSetup').addEventListener('click', () => this.backToSetup());
+        document.getElementById('backToModes').addEventListener('click', () => this.backToModes());
         document.getElementById('humanVsHuman').addEventListener('click', () => this.setGameMode(false));
         document.getElementById('humanVsBot').addEventListener('click', () => this.setGameMode(true));
+        
+        // Board size selection
+        document.querySelectorAll('.size-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => this.setBoardSize(parseInt(e.target.dataset.size)));
+        });
         
         const player1Input = document.getElementById('player1');
         const player2Input = document.getElementById('player2');
@@ -52,6 +60,7 @@ class TicTacToe {
         const humanBtn = document.getElementById('humanVsHuman');
         const botBtn = document.getElementById('humanVsBot');
         const player2Input = document.getElementById('player2');
+        const boardSizeSelection = document.getElementById('boardSizeSelection');
         
         if (vsBot) {
             humanBtn.classList.remove('active');
@@ -65,6 +74,22 @@ class TicTacToe {
             player2Input.value = '';
             player2Input.placeholder = 'Player 2 (O)';
         }
+        
+        // Show board size selection after mode is chosen
+        boardSizeSelection.style.display = 'block';
+    }
+    
+    setBoardSize(size) {
+        this.boardSize = size;
+        this.winCondition = size === 3 ? 3 : 4;
+        
+        // Update active button
+        document.querySelectorAll('.size-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (parseInt(btn.dataset.size) === size) {
+                btn.classList.add('active');
+            }
+        });
     }
 
     startGame() {
@@ -99,8 +124,18 @@ class TicTacToe {
         const boardElement = document.getElementById('board');
         boardElement.innerHTML = '<div class="win-line" id="winLine"></div>';
         this.cells = [];
+        this.board = Array(this.boardSize * this.boardSize).fill(null);
         
-        for (let i = 0; i < 9; i++) {
+        // Update board CSS grid and size class
+        boardElement.style.gridTemplateColumns = `repeat(${this.boardSize}, 1fr)`;
+        boardElement.style.gridTemplateRows = `repeat(${this.boardSize}, 1fr)`;
+        boardElement.className = `board size-${this.boardSize}`;
+        
+        // Update board info
+        const winText = this.winCondition === 3 ? '3 in a row' : '4 in a row';
+        document.getElementById('boardInfo').textContent = `${this.boardSize}x${this.boardSize} - ${winText}`;
+        
+        for (let i = 0; i < this.boardSize * this.boardSize; i++) {
             const cell = document.createElement('div');
             cell.classList.add('cell');
             cell.dataset.index = i;
@@ -165,11 +200,20 @@ class TicTacToe {
     }
     
     getBestMove() {
-        // Hard difficulty: Use minimax algorithm
+        // For larger boards, use balanced strategy
+        if (this.boardSize > 3) {
+            return this.getBalancedMove();
+        }
+        
+        // For 3x3, use minimax with minimal randomness
+        if (Math.random() < 0.1) {
+            return this.getRandomMove();
+        }
+        
         let bestScore = -Infinity;
         let bestMove = -1;
         
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < this.boardSize * this.boardSize; i++) {
             if (this.board[i] === null) {
                 this.board[i] = 'O';
                 let score = this.minimax(this.board, 0, false);
@@ -185,6 +229,87 @@ class TicTacToe {
         return bestMove;
     }
     
+    getBalancedMove() {
+        const totalCells = this.boardSize * this.boardSize;
+        const availableMoves = [];
+        
+        // Get all available moves
+        for (let i = 0; i < totalCells; i++) {
+            if (this.board[i] === null) {
+                availableMoves.push(i);
+            }
+        }
+        
+        if (availableMoves.length === 0) return -1;
+        
+        // 15% chance to make a random move (bot wins/draws 80%)
+        if (Math.random() < 0.15) {
+            return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        }
+        
+        // Shuffle available moves to avoid always picking position 0
+        const shuffledMoves = [...availableMoves].sort(() => Math.random() - 0.5);
+        
+        // Try to win first
+        for (const move of shuffledMoves) {
+            this.board[move] = 'O';
+            if (this.checkWinner()) {
+                this.board[move] = null;
+                return move;
+            }
+            this.board[move] = null;
+        }
+        
+        // Block opponent from winning (95% of the time)
+        if (Math.random() < 0.95) {
+            for (const move of shuffledMoves) {
+                this.board[move] = 'X';
+                if (this.checkWinner()) {
+                    this.board[move] = null;
+                    return move;
+                }
+                this.board[move] = null;
+            }
+        }
+        
+        // Strategic positions with randomization
+        const center = Math.floor(totalCells / 2);
+        const size = this.boardSize;
+        const corners = [];
+        const edges = [];
+        
+        for (const move of availableMoves) {
+            const row = Math.floor(move / size);
+            const col = move % size;
+            
+            if (move === center && Math.random() < 0.8) {
+                return move;
+            } else if ((row === 0 || row === size - 1) && (col === 0 || col === size - 1)) {
+                corners.push(move);
+            } else {
+                edges.push(move);
+            }
+        }
+        
+        // Prefer corners (70% chance)
+        if (corners.length > 0 && Math.random() < 0.7) {
+            return corners[Math.floor(Math.random() * corners.length)];
+        }
+        
+        // Return random available move
+        return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+    }
+    
+    getRandomMove() {
+        const availableMoves = [];
+        for (let i = 0; i < this.boardSize * this.boardSize; i++) {
+            if (this.board[i] === null) {
+                availableMoves.push(i);
+            }
+        }
+        return availableMoves.length > 0 ? availableMoves[Math.floor(Math.random() * availableMoves.length)] : -1;
+    }
+    
     minimax(board, depth, isMaximizing) {
         const result = this.checkWinnerForMinimax(board);
         
@@ -192,9 +317,11 @@ class TicTacToe {
         if (result === 'X') return depth - 10;
         if (board.every(cell => cell !== null)) return 0;
         
+        const totalCells = this.boardSize * this.boardSize;
+        
         if (isMaximizing) {
             let bestScore = -Infinity;
-            for (let i = 0; i < 9; i++) {
+            for (let i = 0; i < totalCells; i++) {
                 if (board[i] === null) {
                     board[i] = 'O';
                     let score = this.minimax(board, depth + 1, false);
@@ -205,7 +332,7 @@ class TicTacToe {
             return bestScore;
         } else {
             let bestScore = Infinity;
-            for (let i = 0; i < 9; i++) {
+            for (let i = 0; i < totalCells; i++) {
                 if (board[i] === null) {
                     board[i] = 'X';
                     let score = this.minimax(board, depth + 1, true);
@@ -218,36 +345,110 @@ class TicTacToe {
     }
     
     checkWinnerForMinimax(board) {
-        const winPatterns = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-        ];
+        // Save current state
+        const originalBoard = [...this.board];
+        const originalWinningPattern = this.winningPattern;
         
-        for (const pattern of winPatterns) {
-            const [a, b, c] = pattern;
-            if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-                return board[a];
-            }
+        // Temporarily set board for checking
+        this.board = board;
+        const hasWinner = this.checkWinner();
+        let winner = null;
+        
+        if (hasWinner && this.winningPattern) {
+            winner = board[this.winningPattern[0]];
         }
-        return null;
+        
+        // Restore original state
+        this.board = originalBoard;
+        this.winningPattern = originalWinningPattern;
+        
+        return winner;
     }
 
     checkWinner() {
-        const winPatterns = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-        ];
-
-        return winPatterns.some(pattern => {
-            const [a, b, c] = pattern;
-            if (this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c]) {
-                this.winningPattern = pattern;
-                return true;
+        const size = this.boardSize;
+        const winLength = this.winCondition;
+        
+        // Check all possible winning patterns
+        for (let row = 0; row < size; row++) {
+            for (let col = 0; col < size; col++) {
+                const index = row * size + col;
+                if (!this.board[index]) continue;
+                
+                // Check horizontal
+                if (col <= size - winLength) {
+                    const pattern = [];
+                    let isWin = true;
+                    for (let i = 0; i < winLength; i++) {
+                        const checkIndex = row * size + col + i;
+                        pattern.push(checkIndex);
+                        if (this.board[checkIndex] !== this.board[index]) {
+                            isWin = false;
+                            break;
+                        }
+                    }
+                    if (isWin) {
+                        this.winningPattern = pattern;
+                        return true;
+                    }
+                }
+                
+                // Check vertical
+                if (row <= size - winLength) {
+                    const pattern = [];
+                    let isWin = true;
+                    for (let i = 0; i < winLength; i++) {
+                        const checkIndex = (row + i) * size + col;
+                        pattern.push(checkIndex);
+                        if (this.board[checkIndex] !== this.board[index]) {
+                            isWin = false;
+                            break;
+                        }
+                    }
+                    if (isWin) {
+                        this.winningPattern = pattern;
+                        return true;
+                    }
+                }
+                
+                // Check diagonal (top-left to bottom-right)
+                if (row <= size - winLength && col <= size - winLength) {
+                    const pattern = [];
+                    let isWin = true;
+                    for (let i = 0; i < winLength; i++) {
+                        const checkIndex = (row + i) * size + col + i;
+                        pattern.push(checkIndex);
+                        if (this.board[checkIndex] !== this.board[index]) {
+                            isWin = false;
+                            break;
+                        }
+                    }
+                    if (isWin) {
+                        this.winningPattern = pattern;
+                        return true;
+                    }
+                }
+                
+                // Check diagonal (top-right to bottom-left)
+                if (row <= size - winLength && col >= winLength - 1) {
+                    const pattern = [];
+                    let isWin = true;
+                    for (let i = 0; i < winLength; i++) {
+                        const checkIndex = (row + i) * size + col - i;
+                        pattern.push(checkIndex);
+                        if (this.board[checkIndex] !== this.board[index]) {
+                            isWin = false;
+                            break;
+                        }
+                    }
+                    if (isWin) {
+                        this.winningPattern = pattern;
+                        return true;
+                    }
+                }
             }
-            return false;
-        });
+        }
+        return false;
     }
 
     highlightWinningCells() {
@@ -255,7 +456,10 @@ class TicTacToe {
             this.winningPattern.forEach(index => {
                 this.cells[index].classList.add('winner');
             });
-            this.drawWinLine();
+            // Only draw win line for 3-in-a-row (3x3 board)
+            if (this.winCondition === 3) {
+                this.drawWinLine();
+            }
         }
     }
     
@@ -263,16 +467,63 @@ class TicTacToe {
         const winLine = document.getElementById('winLine');
         winLine.className = 'win-line';
         
-        const [a, b, c] = this.winningPattern;
+        const pattern = this.winningPattern;
+        const size = this.boardSize;
         
-        if (a === 0 && b === 1 && c === 2) winLine.classList.add('row-0');
-        else if (a === 3 && b === 4 && c === 5) winLine.classList.add('row-1');
-        else if (a === 6 && b === 7 && c === 8) winLine.classList.add('row-2');
-        else if (a === 0 && b === 3 && c === 6) winLine.classList.add('col-0');
-        else if (a === 1 && b === 4 && c === 7) winLine.classList.add('col-1');
-        else if (a === 2 && b === 5 && c === 8) winLine.classList.add('col-2');
-        else if (a === 0 && b === 4 && c === 8) winLine.classList.add('diag-0');
-        else if (a === 2 && b === 4 && c === 6) winLine.classList.add('diag-1');
+        // Calculate line position and direction
+        const startRow = Math.floor(pattern[0] / size);
+        const startCol = pattern[0] % size;
+        const endRow = Math.floor(pattern[pattern.length - 1] / size);
+        const endCol = pattern[pattern.length - 1] % size;
+        
+        // Determine line type
+        if (startRow === endRow) {
+            // Horizontal line
+            const rowPercent = (startRow + 0.5) / size * 100;
+            const colStartPercent = (startCol + 0.5) / size * 100;
+            const colEndPercent = (endCol + 0.5) / size * 100;
+            const widthPercent = Math.abs(colEndPercent - colStartPercent);
+            
+            winLine.style.top = `${rowPercent}%`;
+            winLine.style.left = `${Math.min(colStartPercent, colEndPercent)}%`;
+            winLine.style.width = `${widthPercent}%`;
+            winLine.style.height = '6px';
+            winLine.style.transform = 'translateY(-50%)';
+            winLine.classList.add('horizontal');
+            
+        } else if (startCol === endCol) {
+            // Vertical line
+            const colPercent = (startCol + 0.5) / size * 100;
+            const rowStartPercent = (startRow + 0.5) / size * 100;
+            const rowEndPercent = (endRow + 0.5) / size * 100;
+            const heightPercent = Math.abs(rowEndPercent - rowStartPercent);
+            
+            winLine.style.left = `${colPercent}%`;
+            winLine.style.top = `${Math.min(rowStartPercent, rowEndPercent)}%`;
+            winLine.style.width = '6px';
+            winLine.style.height = `${heightPercent}%`;
+            winLine.style.transform = 'translateX(-50%)';
+            winLine.classList.add('vertical');
+            
+        } else {
+            // Diagonal line
+            const centerRow = (startRow + endRow) / 2 + 0.5;
+            const centerCol = (startCol + endCol) / 2 + 0.5;
+            const centerRowPercent = centerRow / size * 100;
+            const centerColPercent = centerCol / size * 100;
+            
+            const length = Math.sqrt(Math.pow(endRow - startRow, 2) + Math.pow(endCol - startCol, 2)) + 1;
+            const lengthPercent = (length / size) * 100;
+            
+            const angle = Math.atan2(endRow - startRow, endCol - startCol) * 180 / Math.PI;
+            
+            winLine.style.top = `${centerRowPercent}%`;
+            winLine.style.left = `${centerColPercent}%`;
+            winLine.style.width = `${lengthPercent}%`;
+            winLine.style.height = '6px';
+            winLine.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+            winLine.classList.add('diagonal');
+        }
         
         setTimeout(() => {
             winLine.classList.add('show');
@@ -284,7 +535,7 @@ class TicTacToe {
     }
 
     restart() {
-        this.board = Array(9).fill(null);
+        this.board = Array(this.boardSize * this.boardSize).fill(null);
         this.currentPlayer = 'X';
         this.gameActive = true;
         this.winningPattern = null;
@@ -446,6 +697,30 @@ class TicTacToe {
         
         // Don't clear localStorage - keep history for same players
         this.gameHistory = this.loadHistory();
+    }
+    
+    backToModes() {
+        // Hide game area and show player setup
+        document.getElementById('gameArea').style.display = 'none';
+        document.getElementById('playerSetup').style.display = 'block';
+        
+        // Reset input fields
+        document.getElementById('player1').value = '';
+        document.getElementById('player2').value = '';
+        
+        // Reset game mode to default (Human vs Human)
+        this.setGameMode(false);
+        
+        // Reset game state
+        this.board = Array(this.boardSize * this.boardSize).fill(null);
+        this.currentPlayer = 'X';
+        this.gameActive = true;
+        this.cells = [];
+        this.player1Name = '';
+        this.player2Name = '';
+        this.winningPattern = null;
+        
+        // Keep scores and history for continuity
     }
 }
 
