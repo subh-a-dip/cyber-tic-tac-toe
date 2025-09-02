@@ -205,8 +205,8 @@ class TicTacToe {
             return this.getBalancedMove();
         }
         
-        // For 3x3, use minimax with minimal randomness
-        if (Math.random() < 0.1) {
+        // For 3x3, use pure minimax (nearly unbeatable)
+        if (Math.random() < 0.05) {
             return this.getRandomMove();
         }
         
