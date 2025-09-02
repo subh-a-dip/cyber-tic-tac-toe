@@ -133,6 +133,37 @@ h1 {
     box-shadow: 0 15px 35px rgba(255, 0, 128, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
+.game-mode {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.mode-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    border: 2px solid rgba(0, 212, 255, 0.3);
+    padding: 10px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.mode-btn.active {
+    background: linear-gradient(45deg, #00d4ff, #0080ff);
+    color: white;
+    border-color: #00d4ff;
+    box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+}
+
+.mode-btn:hover {
+    border-color: rgba(0, 212, 255, 0.8);
+    transform: translateY(-2px);
+}
+
 .game-area {
     position: relative;
 }

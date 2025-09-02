@@ -9,6 +9,8 @@ class TicTacToe {
         this.player1Score = 0;
         this.player2Score = 0;
         this.gameHistory = this.loadHistory();
+        this.isVsBot = false;
+        this.botDifficulty = 'hard';
         this.init();
     }
 
@@ -20,13 +22,19 @@ class TicTacToe {
         document.getElementById('closeHistory').addEventListener('click', () => this.closeHistory());
         document.getElementById('playAgain').addEventListener('click', () => this.playAgain());
         document.getElementById('backToSetup').addEventListener('click', () => this.backToSetup());
+        document.getElementById('humanVsHuman').addEventListener('click', () => this.setGameMode(false));
+        document.getElementById('humanVsBot').addEventListener('click', () => this.setGameMode(true));
         
         const player1Input = document.getElementById('player1');
         const player2Input = document.getElementById('player2');
         
         player1Input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                player2Input.focus();
+                if (!this.isVsBot) {
+                    player2Input.focus();
+                } else {
+                    this.startGame();
+                }
             }
         });
         
@@ -38,10 +46,30 @@ class TicTacToe {
         
         this.cleanOldHistory();
     }
+    
+    setGameMode(vsBot) {
+        this.isVsBot = vsBot;
+        const humanBtn = document.getElementById('humanVsHuman');
+        const botBtn = document.getElementById('humanVsBot');
+        const player2Input = document.getElementById('player2');
+        
+        if (vsBot) {
+            humanBtn.classList.remove('active');
+            botBtn.classList.add('active');
+            player2Input.style.display = 'none';
+            player2Input.value = 'Bot';
+        } else {
+            botBtn.classList.remove('active');
+            humanBtn.classList.add('active');
+            player2Input.style.display = 'block';
+            player2Input.value = '';
+            player2Input.placeholder = 'Player 2 (O)';
+        }
+    }
 
     startGame() {
         const p1 = document.getElementById('player1').value.trim() || 'Player 1';
-        const p2 = document.getElementById('player2').value.trim() || 'Player 2';
+        const p2 = this.isVsBot ? '🤖 Bot' : (document.getElementById('player2').value.trim() || 'Player 2');
         
         this.player1Name = p1;
         this.player2Name = p2;
@@ -85,6 +113,16 @@ class TicTacToe {
     handleCellClick(index) {
         if (this.board[index] || !this.gameActive) return;
 
+        this.makeMove(index);
+        
+        if (this.gameActive && this.isVsBot && this.currentPlayer === 'O') {
+            setTimeout(() => {
+                this.makeBotMove();
+            }, 500);
+        }
+    }
+    
+    makeMove(index) {
         this.board[index] = this.currentPlayer;
         this.cells[index].textContent = this.currentPlayer;
         this.cells[index].classList.add(this.currentPlayer.toLowerCase(), 'taken');
@@ -115,6 +153,84 @@ class TicTacToe {
             this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
             this.updateStatus(`${this.getCurrentPlayerName()}'s turn`);
         }
+    }
+    
+    makeBotMove() {
+        if (!this.gameActive) return;
+        
+        const bestMove = this.getBestMove();
+        if (bestMove !== -1) {
+            this.makeMove(bestMove);
+        }
+    }
+    
+    getBestMove() {
+        // Hard difficulty: Use minimax algorithm
+        let bestScore = -Infinity;
+        let bestMove = -1;
+        
+        for (let i = 0; i < 9; i++) {
+            if (this.board[i] === null) {
+                this.board[i] = 'O';
+                let score = this.minimax(this.board, 0, false);
+                this.board[i] = null;
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = i;
+                }
+            }
+        }
+        
+        return bestMove;
+    }
+    
+    minimax(board, depth, isMaximizing) {
+        const result = this.checkWinnerForMinimax(board);
+        
+        if (result === 'O') return 10 - depth;
+        if (result === 'X') return depth - 10;
+        if (board.every(cell => cell !== null)) return 0;
+        
+        if (isMaximizing) {
+            let bestScore = -Infinity;
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === null) {
+                    board[i] = 'O';
+                    let score = this.minimax(board, depth + 1, false);
+                    board[i] = null;
+                    bestScore = Math.max(score, bestScore);
+                }
+            }
+            return bestScore;
+        } else {
+            let bestScore = Infinity;
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === null) {
+                    board[i] = 'X';
+                    let score = this.minimax(board, depth + 1, true);
+                    board[i] = null;
+                    bestScore = Math.min(score, bestScore);
+                }
+            }
+            return bestScore;
+        }
+    }
+    
+    checkWinnerForMinimax(board) {
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+        
+        for (const pattern of winPatterns) {
+            const [a, b, c] = pattern;
+            if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                return board[a];
+            }
+        }
+        return null;
     }
 
     checkWinner() {

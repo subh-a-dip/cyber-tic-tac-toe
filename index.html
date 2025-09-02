@@ -11,9 +11,15 @@
     <div class="container">
         <h1>🚀 CYBER 🚀<br><span class="small-title">🎮 TIC-TAC-TOE 🎮</span></h1>
         <div class="player-setup" id="playerSetup">
-            <h3>Enter Player Names</h3>
-            <input type="text" id="player1" placeholder="Player 1 (X)" maxlength="10">
-            <input type="text" id="player2" placeholder="Player 2 (O)" maxlength="10">
+            <h3>Choose Game Mode</h3>
+            <div class="game-mode">
+                <button id="humanVsHuman" class="mode-btn active">👥 Human vs Human</button>
+                <button id="humanVsBot" class="mode-btn">🤖 Human vs Bot</button>
+            </div>
+            <div class="player-inputs" id="playerInputs">
+                <input type="text" id="player1" placeholder="Player 1 (X)" maxlength="10">
+                <input type="text" id="player2" placeholder="Player 2 (O)" maxlength="10">
+            </div>
             <button id="startGame">Start Game</button>
         </div>
         <div class="game-area" id="gameArea" style="display:none;">
